@@ -1,0 +1,20 @@
+Metadata-Version: 2.4
+Name: ckanext-sentry
+Version: 0.1.0
+Summary: CKAN extension that forwards log messages to Sentry
+Home-page: https://github.com/cioos-siooc/ckanext-sentry
+Author: CIOOS
+License: AGPL
+Keywords: CKAN sentry logging monitoring
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)
+Classifier: Programming Language :: Python :: 3
+Dynamic: author
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: summary
+
+Initializes the Sentry Python SDK and configures LoggingIntegration to capture CKAN log messages as breadcrumbs and events. All settings are configurable via environment variables using ckanext-envvars.
