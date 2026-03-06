@@ -7,11 +7,11 @@ log = logging.getLogger(__name__)
 
 # Map string level names to logging constants
 LOG_LEVELS = {
-    'DEBUG': logging.DEBUG,
-    'INFO': logging.INFO,
-    'WARNING': logging.WARNING,
-    'ERROR': logging.ERROR,
-    'CRITICAL': logging.CRITICAL,
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
 }
 
 
@@ -21,22 +21,27 @@ class SentryPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
 
     def update_config(self, config_):
-        dsn = toolkit.config.get('ckanext.sentry.dsn', '')
+        dsn = toolkit.config.get("ckanext.sentry.dsn", "")
         if not dsn:
-            log.info('Sentry DSN not configured (ckanext.sentry.dsn) '
-                     '- Sentry integration disabled')
+            log.info(
+                "Sentry DSN not configured (ckanext.sentry.dsn) "
+                "- Sentry integration disabled"
+            )
             return
 
         import sentry_sdk
         from sentry_sdk.integrations.logging import LoggingIntegration
 
         event_level_name = toolkit.config.get(
-            'ckanext.sentry.event_level', 'ERROR').upper()
+            "ckanext.sentry.event_level", "ERROR"
+        ).upper()
         breadcrumb_level_name = toolkit.config.get(
-            'ckanext.sentry.breadcrumb_level', 'INFO').upper()
-        traces_sample_rate = float(toolkit.config.get(
-            'ckanext.sentry.traces_sample_rate', '0.0'))
-        environment = toolkit.config.get('ckanext.sentry.environment', '')
+            "ckanext.sentry.breadcrumb_level", "INFO"
+        ).upper()
+        traces_sample_rate = float(
+            toolkit.config.get("ckanext.sentry.traces_sample_rate", "0.0")
+        )
+        environment = toolkit.config.get("ckanext.sentry.environment", "")
 
         event_level = LOG_LEVELS.get(event_level_name, logging.ERROR)
         breadcrumb_level = LOG_LEVELS.get(breadcrumb_level_name, logging.INFO)
@@ -53,10 +58,13 @@ class SentryPlugin(plugins.SingletonPlugin):
         )
 
         if environment:
-            init_kwargs['environment'] = environment
+            init_kwargs["environment"] = environment
 
         sentry_sdk.init(**init_kwargs)
 
-        log.info('Sentry initialized (events=%s, breadcrumbs=%s, '
-                 'traces_sample_rate=%s)',
-                 event_level_name, breadcrumb_level_name, traces_sample_rate)
+        log.info(
+            "Sentry initialized (events=%s, breadcrumbs=%s, traces_sample_rate=%s)",
+            event_level_name,
+            breadcrumb_level_name,
+            traces_sample_rate,
+        )
