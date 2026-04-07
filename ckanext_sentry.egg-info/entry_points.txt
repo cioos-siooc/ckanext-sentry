@@ -1,2 +1,0 @@
-[ckan.plugins]
-sentry = ckanext.sentry.plugin:SentryPlugin
