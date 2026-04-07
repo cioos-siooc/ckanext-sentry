@@ -39,7 +39,7 @@ def _init_sentry():
     traces_sample_rate = float(
         toolkit.config.get("ckanext.sentry.traces_sample_rate", "0.0")
     )
-    environment = os.environ.get("ENVIRONMENT", "")
+    environment = os.environ.get("ENVIRONMENT", "development")
 
     event_level = LOG_LEVELS.get(event_level_name, logging.ERROR)
     breadcrumb_level = LOG_LEVELS.get(breadcrumb_level_name, logging.INFO)
