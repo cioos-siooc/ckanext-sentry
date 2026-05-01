@@ -1,1 +1,1 @@
-sentry-sdk>=2.53.0
+sentry-sdk[flask]>=2.53.0,<3.0.0

@@ -19,9 +19,14 @@ setup(
     keywords="CKAN sentry logging monitoring",
     packages=find_packages(exclude=["contrib", "docs", "tests*"]),
     namespace_packages=["ckanext"],
-    install_requires=[],
+    install_requires=[
+        "sentry-sdk[flask]>=2.53.0,<3.0.0",
+    ],
     entry_points="""
         [ckan.plugins]
         sentry=ckanext.sentry.plugin:SentryPlugin
+
+        [ckan.click_command]
+        sentry=ckanext.sentry.plugin:sentry
     """,
 )
