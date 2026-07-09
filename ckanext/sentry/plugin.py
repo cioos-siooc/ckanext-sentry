@@ -131,7 +131,13 @@ def _init_sentry() -> bool:
 
     event_level_name = _cfg("ckanext.sentry.event_level", "ERROR").upper()
     breadcrumb_level_name = _cfg("ckanext.sentry.breadcrumb_level", "INFO").upper()
-    traces_sample_rate = float(_cfg("ckanext.sentry.traces_sample_rate", "0.0"))
+    try:
+        traces_sample_rate = float(_cfg("ckanext.sentry.traces_sample_rate", "0.0"))
+    except (TypeError, ValueError):
+        log.warning(
+            "Invalid ckanext.sentry.traces_sample_rate value; defaulting to 0.0"
+        )
+        traces_sample_rate = 0.0
     environment = os.environ.get("ENVIRONMENT", "development")
     release = _resolve_release()
     server_name = os.environ.get("HOSTNAME") or socket.gethostname()
