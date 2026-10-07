@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ckanext-sentry"
+version = "0.1.0"
+description = "CKAN extension that forwards log messages to Sentry"
+readme = "README.md"
+authors = [{ name = "CIOOS" }]
+license = { text = "AGPL" }
+keywords = ["CKAN", "sentry", "logging", "monitoring"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Programming Language :: Python :: 3",
+]
+requires-python = ">=3.10"
+dependencies = ["sentry-sdk[flask]>=2.53.0,<3.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/cioos-siooc/ckanext-sentry"
+
+[project.entry-points."ckan.plugins"]
+sentry = "ckanext.sentry.plugin:SentryPlugin"
+
+[project.entry-points."ckan.click_command"]
+sentry = "ckanext.sentry.plugin:sentry"
+
+[tool.setuptools.packages.find]
+include = ["ckanext*"]
