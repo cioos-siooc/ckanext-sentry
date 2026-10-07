@@ -288,9 +288,11 @@ def sentry_status():
 )
 def sentry_check(connect):
     """Validate DSN parsing, DNS resolution, and (optionally) HTTPS reachability."""
-    dsn = toolkit.config.get("ckanext.sentry.dsn", "") or os.environ.get(
-        "CKAN___CKANEXT__SENTRY__DSN", ""
-    ) or os.environ.get("SENTRY_DSN", "")
+    dsn = (
+        toolkit.config.get("ckanext.sentry.dsn", "")
+        or os.environ.get("CKAN___CKANEXT__SENTRY__DSN", "")
+        or os.environ.get("SENTRY_DSN", "")
+    )
     if not dsn:
         click.secho(
             "ERROR: no DSN configured "
@@ -364,9 +366,11 @@ def sentry_test(kind, message, unhandled):
     """Send a test event to Sentry to verify the integration is working."""
     import sentry_sdk
 
-    dsn = toolkit.config.get("ckanext.sentry.dsn", "") or os.environ.get(
-        "CKAN___CKANEXT__SENTRY__DSN", ""
-    ) or os.environ.get("SENTRY_DSN", "")
+    dsn = (
+        toolkit.config.get("ckanext.sentry.dsn", "")
+        or os.environ.get("CKAN___CKANEXT__SENTRY__DSN", "")
+        or os.environ.get("SENTRY_DSN", "")
+    )
     if not dsn:
         click.secho(
             "ERROR: no DSN configured "
@@ -386,9 +390,7 @@ def sentry_test(kind, message, unhandled):
         if unhandled:
             # Flush eagerly because the raise below short-circuits the
             # post-block flush.
-            click.secho(
-                f"Raising unhandled RuntimeError: {text!r}", fg="yellow"
-            )
+            click.secho(f"Raising unhandled RuntimeError: {text!r}", fg="yellow")
             sentry_sdk.flush(timeout=10)
             raise RuntimeError(text)
         try:
@@ -403,9 +405,7 @@ def sentry_test(kind, message, unhandled):
         event_id = "(via LoggingIntegration)"
 
     sentry_sdk.flush(timeout=10)
-    click.secho(
-        f"Test event ({kind}) sent to Sentry. event_id={event_id}", fg="green"
-    )
+    click.secho(f"Test event ({kind}) sent to Sentry. event_id={event_id}", fg="green")
 
 
 @sentry.command("raise")
@@ -424,9 +424,11 @@ def sentry_raise(message):
     """
     import sentry_sdk
 
-    dsn = toolkit.config.get("ckanext.sentry.dsn", "") or os.environ.get(
-        "CKAN___CKANEXT__SENTRY__DSN", ""
-    ) or os.environ.get("SENTRY_DSN", "")
+    dsn = (
+        toolkit.config.get("ckanext.sentry.dsn", "")
+        or os.environ.get("CKAN___CKANEXT__SENTRY__DSN", "")
+        or os.environ.get("SENTRY_DSN", "")
+    )
     if not dsn:
         click.secho(
             "ERROR: no DSN configured "
