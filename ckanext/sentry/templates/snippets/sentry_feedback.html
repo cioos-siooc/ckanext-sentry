@@ -1,0 +1,65 @@
+{#
+  Sentry user feedback widget.
+
+  Renders only when ckanext.sentry.feedback_enabled is true and a frontend
+  DSN is configured (ckanext.sentry.frontend_dsn, falling back to
+  ckanext.sentry.dsn). The browser SDK is loaded from Sentry's CDN.
+  Themes include it from the end of <body> (with "ignore missing", so the
+  page still renders when the sentry plugin is off).
+#}
+{% set feedback = h.sentry_feedback_config() %}
+{% if feedback.enabled %}
+{% set frontend_dsn = feedback.dsn %}
+{% set sentry_env = feedback.environment %}
+{% set sdk_version = feedback.sdk_version %}
+{% if frontend_dsn %}
+{# Strings via _() then str() — LazyString is not JSON-serialisable. #}
+{% set labels = {
+  'triggerLabel': _('Feedback')|string,
+  'triggerAriaLabel': _('Feedback')|string,
+  'formTitle': _('Feedback')|string,
+  'submitButtonLabel': _('Send Report')|string,
+  'cancelButtonLabel': _('Cancel')|string,
+  'nameLabel': _('Name')|string,
+  'emailLabel': _('Email')|string,
+  'messageLabel': _('Description')|string,
+  'messagePlaceholder': _('What went wrong?')|string,
+  'successMessageText': _('Thank you for your report!')|string,
+  'isRequiredLabel': _('(required)')|string,
+  'addScreenshotButtonLabel': _('Add a screenshot')|string,
+  'removeScreenshotButtonLabel': _('Remove screenshot')|string
+} %}
+<script
+  src="https://browser.sentry-cdn.com/{{ sdk_version }}/bundle.feedback.min.js"
+  crossorigin="anonymous"
+></script>
+<script>
+  (function () {
+    if (typeof Sentry === "undefined" || !Sentry.init) {
+      console.warn("Sentry browser SDK failed to load; feedback widget disabled.");
+      return;
+    }
+    var feedbackOpts = Object.assign(
+      { colorScheme: "system", showBranding: false, autoInject: true },
+      {{ labels|tojson }}
+    );
+    var initOpts = {
+      dsn: {{ frontend_dsn|tojson }},
+      integrations: [Sentry.feedbackIntegration(feedbackOpts)]
+    };
+    {% if sentry_env %}
+    initOpts.environment = {{ sentry_env|tojson }};
+    {% endif %}
+    {% if g.userobj %}
+    initOpts.initialScope = {
+      user: {
+        username: {{ g.userobj.name|tojson }},
+        email: {{ (g.userobj.email or '')|tojson }}
+      }
+    };
+    {% endif %}
+    Sentry.init(initOpts);
+  })();
+</script>
+{% endif %}
+{% endif %}

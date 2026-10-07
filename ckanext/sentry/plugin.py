@@ -203,17 +203,34 @@ class SentryPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.ITemplateHelpers)
 
     def update_config(self, config_):
+        toolkit.add_template_directory(config_, "templates")
         # Safety-net re-init: by now toolkit.config is fully populated, so this
         # picks up DSN values that weren't visible at module import time.
         _init_sentry()
+
+    def get_helpers(self):
+        return {"sentry_feedback_config": _feedback_config}
 
     def get_commands(self):
         return [sentry]
 
     def get_blueprint(self):
         return _build_blueprint()
+
+
+def _feedback_config() -> dict:
+    """Settings for the browser feedback widget (snippets/sentry_feedback.html)."""
+    config = toolkit.config
+    return {
+        "enabled": toolkit.asbool(config.get("ckanext.sentry.feedback_enabled", False)),
+        "dsn": config.get("ckanext.sentry.frontend_dsn", "")
+        or config.get("ckanext.sentry.dsn", ""),
+        "environment": config.get("ckanext.sentry.environment", ""),
+        "sdk_version": config.get("ckanext.sentry.browser_sdk_version", "8.55.0"),
+    }
 
 
 # ---------------------------------------------------------------------------
