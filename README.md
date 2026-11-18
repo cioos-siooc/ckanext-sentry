@@ -151,8 +151,8 @@ just sentry-status                       # dev mode default
 just sentry-status ckan docker-compose.yml  # base mode
 just sentry-check                        # DSN + DNS only
 just sentry-check ckan-dev docker-compose.dev.yml --connect
-just test-sentry                         # default kind=exception
-just test-sentry log
+just sentry-test                         # default kind=exception
+just sentry-test log
 just sentry-diagnose https://my-deploy <api-token>
 ```
 
