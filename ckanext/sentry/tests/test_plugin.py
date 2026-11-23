@@ -147,3 +147,65 @@ def test_diagnose_returns_status(app, monkeypatch):
     monkeypatch.setattr(plugin, "_is_sysadmin", lambda: True)
     payload = app.get("/api/sentry/_diagnose", status=200).json
     assert payload == plugin._status_payload()
+
+
+def _site_url(path):
+    """A URL on this site, as a page of the catalogue would send in Referer."""
+    return toolkit.config["ckan.site_url"].rstrip("/") + path
+
+
+@pytest.fixture
+def captured(monkeypatch):
+    """Pretend the SDK is live and record each capture_message(), with the
+    scope's fingerprint and tags at the time of the call."""
+    messages = []
+
+    def capture_message(text, level=None):
+        scope = sentry_sdk.get_current_scope()
+        messages.append(
+            {
+                "text": text,
+                "level": level,
+                "fingerprint": scope._fingerprint,
+                "tags": dict(scope._tags),
+            }
+        )
+
+    monkeypatch.setattr(sentry_sdk, "is_initialized", lambda: True)
+    monkeypatch.setattr(sentry_sdk, "capture_message", capture_message)
+    return messages
+
+
+@pytest.mark.usefixtures("with_plugins")
+def test_404_from_own_page_is_reported(app, captured):
+    app.get(
+        "/dataset/no-such-dataset",
+        headers={"Referer": _site_url("/organization/some-org?q=secret")},
+        status=404,
+    )
+    assert captured == [
+        {
+            "text": "Broken internal link: /dataset/no-such-dataset",
+            "level": "warning",
+            "fingerprint": ["broken-internal-link", "/dataset/no-such-dataset"],
+            "tags": {
+                "broken_link.path": "/dataset/no-such-dataset",
+                "broken_link.source": "/organization/some-org",
+            },
+        }
+    ]
+
+
+@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.parametrize(
+    "headers", [{}, {"Referer": "https://elsewhere.example.org/page"}]
+)
+def test_404_without_internal_referrer_is_not_reported(app, captured, headers):
+    app.get("/no-such-page", headers=headers, status=404)
+    assert captured == []
+
+
+@pytest.mark.usefixtures("with_plugins")
+def test_found_page_is_not_reported(app, captured):
+    app.get("/dataset/", headers={"Referer": _site_url("/")})
+    assert captured == []

@@ -23,6 +23,8 @@ messages should be visible in Sentry.
   `server_name` (container hostname).
 - Scrubs sensitive headers (`Authorization`, `Cookie`,
   `X-CKAN-API-Key`, etc.) before sending.
+- Reports broken internal links: a 404 reached from one of the site's
+  own pages becomes a warning-level message (see below).
 - Exposes CLI diagnostics: `status`, `check`, `test`.
 - Exposes a sysadmin-gated `/api/sentry/_diagnose` HTTP endpoint to
   validate live deployments without `docker exec`.
@@ -198,6 +200,19 @@ What it does **not** catch automatically: uWSGI worker harakiri kills
 a uWSGI-level signal handler that converts harakiri into a CRITICAL
 log record before the worker dies. That is intentionally out of scope
 here; raise a separate task if you need it.
+
+## How broken internal links are reported
+
+A 404 is reported only when its `Referer` is a page of this site (the
+host the visitor used, or the host of `ckan.site_url`): a link on the
+catalogue that leads nowhere. 404s from other sites, bots and typed
+URLs are not reported; use the reverse proxy's access log for those.
+
+Each report is a `warning`-level message, `Broken internal link: <path>`,
+fingerprinted by the missing path, so each broken link is one Sentry
+issue that counts its hits. Tags: `broken_link.path` and
+`broken_link.source` (the linking page). Both are paths only; query
+strings are dropped. Nothing is sent when Sentry is not configured.
 
 ## Development notes
 
