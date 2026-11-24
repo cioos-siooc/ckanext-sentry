@@ -7,7 +7,7 @@ import urllib.request
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import click
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 log = logging.getLogger(__name__)
 
@@ -209,6 +209,7 @@ class SentryPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.IMiddleware, inherit=True)
 
     def update_config(self, config_):
         # Safety-net re-init: by now toolkit.config is fully populated, so this
@@ -220,6 +221,60 @@ class SentryPlugin(plugins.SingletonPlugin):
 
     def get_blueprint(self):
         return _build_blueprint()
+
+    def make_middleware(self, app, config):
+        # after_request also runs on the responses CKAN's error handler
+        # renders, so it sees every 404.
+        app.after_request(_report_broken_internal_link)
+        return app
+
+
+# ---------------------------------------------------------------------------
+# Broken internal links
+# ---------------------------------------------------------------------------
+
+
+def _is_internal_referrer(referrer: str) -> bool:
+    """True when the Referer is a page of this site (the host the visitor
+    used, or the host of ckan.site_url)."""
+    host = urllib.parse.urlparse(referrer).netloc
+    if not host:
+        return False
+    site_host = urllib.parse.urlparse(toolkit.config.get("ckan.site_url", "")).netloc
+    return host in {request.host, site_host}
+
+
+def _report_broken_internal_link(response):
+    """Report a 404 reached from one of this site's own pages: a link on the
+    site that leads nowhere. 404s from other sites, bots and typed URLs are
+    not reported (that is noise, and it is the proxy log's job).
+
+    Sent as a warning-level message grouped by the missing path, so each
+    broken link is one Sentry issue that counts its hits and source pages.
+    """
+    if response.status_code != 404:
+        return response
+    referrer = request.referrer or ""
+    if not _is_internal_referrer(referrer):
+        return response
+    try:
+        import sentry_sdk
+
+        if not sentry_sdk.is_initialized():
+            return response
+        # Paths only: query strings (search terms, tokens) are left out.
+        source = urllib.parse.urlparse(referrer).path or "/"
+        with sentry_sdk.new_scope() as scope:
+            scope.fingerprint = ["broken-internal-link", request.path]
+            scope.set_tag("broken_link.path", request.path)
+            scope.set_tag("broken_link.source", source)
+            sentry_sdk.capture_message(
+                f"Broken internal link: {request.path}",
+                level="warning",
+            )
+    except Exception:
+        log.exception("Could not report a broken internal link to Sentry")
+    return response
 
 
 # ---------------------------------------------------------------------------
